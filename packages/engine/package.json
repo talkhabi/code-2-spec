@@ -1,6 +1,6 @@
 {
   "name": "code2spec",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Turn legacy codebases into specs, journeys, Gherkin scenarios and Playwright tests for AI-driven rebuilds.",
   "keywords": [
     "legacy",

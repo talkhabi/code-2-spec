@@ -13,7 +13,7 @@ You need:
 
 | Requirement | Why |
 |---|---|
-| **Node.js 24 LTS** (22.5+ minimum) | code2spec uses the built-in `node:sqlite` module |
+| **Node.js 24 LTS** installed (22.5+ minimum) | code2spec uses the built-in `node:sqlite` module. Your legacy project can stay pinned to an older Node (Volta/nvm): code2spec finds and uses the newer one |
 | **A Claude account (Pro / Max)** *or* **an Anthropic API key** | the AI stages run on Claude |
 
 **Your code leaves your machine.** AI stages send the project's source code to Anthropic (the same as using Claude Code
@@ -281,7 +281,7 @@ code2spec verify -u http://localhost:5173 -p /path/to/your-project
 |---|---|
 | `Claude is not authenticated` / `Not logged in` | Run `claude`, then `/login`, or set `ANTHROPIC_API_KEY`. |
 | `claude native binary not installed` | Reinstall with `npm install -g --allow-scripts=@anthropic-ai/claude-code @anthropic-ai/claude-code`. |
-| `No such built-in module: node:sqlite` | Your Node is older than 22.5. Check `node -v` (the global `code2spec` uses your default Node).  |
+| `code2spec needs Node.js 22.5 or newer` | Install Node 24 (`volta install node@24` / `nvm install 24`). Your project may keep its own older Node: code2spec finds the newer one by itself. |
 | `/code2spec:…` tools missing in Claude Code | Run `/mcp`, reconnect `code2spec`. Needs Node 22.5+ on your PATH (`node -v`). |
 | `code2spec: command not found` | Open a new terminal; check that npm's global bin is on your `PATH` (`npm prefix -g`). |
 | `ERR_PNPM_IGNORED_BUILDS` (source install) | Run `pnpm approve-builds esbuild`, then `./scripts/install.sh` again. |

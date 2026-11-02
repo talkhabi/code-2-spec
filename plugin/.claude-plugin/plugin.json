@@ -1,6 +1,6 @@
 {
   "name": "code2spec",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Reverse-engineer legacy codebases into implementation-neutral specs: phases, features, user journeys, business rules, Gherkin scenarios and Playwright tests \u2014 ready for an AI rebuild.",
   "keywords": [
     "legacy",
