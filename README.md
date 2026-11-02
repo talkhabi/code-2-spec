@@ -58,7 +58,7 @@ git clone <REPO_URL> code2spec && cd code2spec
 ```
 
 ```bash
-pnpm run bootstrap
+./scripts/install.sh
 ```
 
 ```bash

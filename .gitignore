@@ -6,3 +6,4 @@ packages/engine/scratch/
 .idea/
 .vscode/
 .DS_Store
+.pack/

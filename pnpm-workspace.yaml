@@ -1,4 +1,9 @@
 packages:
   - packages/*
+
+# esbuild (used by vite/tsup) runs a postinstall to fetch its platform binary.
+# allowBuilds is the pnpm 11+ setting, onlyBuiltDependencies the pnpm 10 one.
 allowBuilds:
-  esbuild: set this to true or false
+  esbuild: true
+onlyBuiltDependencies:
+  - esbuild

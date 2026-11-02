@@ -95,14 +95,15 @@ cd code2spec
 ```
 
 ```bash
-pnpm run bootstrap
+./scripts/install.sh
 ```
 
-`pnpm run bootstrap` runs `pnpm install`, builds the dashboard and engine, and installs the `code2spec` and `code2spec-mcp`
-commands globally (a link to this folder, so **keep the folder where it is**).
+`./scripts/install.sh` checks Node and pnpm, runs `pnpm install`, builds the dashboard and engine, packs the engine and
+installs the `code2spec` and `code2spec-mcp` commands globally with your own npm (works with nvm, Volta, Homebrew).
+The install is a copy: after `git pull`, run the script again to update.
 
-> Same as running `pnpm install && pnpm build && npm i -g ./packages/engine` by hand.
-> If pnpm asks you to approve build scripts, run `pnpm approve-builds` and allow `esbuild`.
+> Do not use `npm i -g ./packages/engine` directly: with Volta it creates a broken link, and run inside a pnpm script
+> it installs into pnpm's private Node instead of yours.
 
 Check the machine:
 
@@ -263,7 +264,8 @@ Then in Claude Code: *"Use code2spec to turn /path/to/your-project into a spec."
 | `Claude is not authenticated` / `Not logged in` | Run `claude`, then `/login`, or set `ANTHROPIC_API_KEY`. |
 | `claude native binary not installed` | Reinstall with `npm install -g --allow-scripts=@anthropic-ai/claude-code @anthropic-ai/claude-code`. |
 | `No such built-in module: node:sqlite` | Your Node is older than 22.5. Check `node -v` (the global `code2spec` uses your default Node). In the repo, pnpm downloads Node 24 for scripts automatically. |
-| `code2spec: command not found` | Run `npm i -g ./packages/engine` in the repo again; make sure npm's global bin is on your `PATH` (`npm prefix -g`). |
+| `code2spec: command not found` | Run `./scripts/install.sh` again and open a new terminal; make sure npm's global bin is on your `PATH` (`npm prefix -g`). |
+| `ERR_PNPM_IGNORED_BUILDS` (esbuild) | Run `pnpm approve-builds esbuild`, then the install script again. |
 | Dashboard shows "build not found" | Run `pnpm build` in the repo. |
 | Port 4600 in use | `code2spec serve --port 4700`. |
 | Usage limit reached mid-run | Wait for the reset, then re-run the same command. It resumes. |
@@ -273,7 +275,7 @@ Then in Claude Code: *"Use code2spec to turn /path/to/your-project into a spec."
 ## Updating
 
 ```bash
-cd code2spec && git pull && pnpm install && pnpm build
+cd code2spec && git pull && ./scripts/install.sh
 ```
 
 ## Uninstalling

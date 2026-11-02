@@ -6,7 +6,6 @@
     "node": ">=22.5"
   },
   "scripts": {
-    "bootstrap": "pnpm install && pnpm build && npm i -g ./packages/engine",
     "build": "pnpm --filter @code2spec/dashboard build && pnpm --filter @code2spec/engine build",
     "test": "pnpm --filter @code2spec/engine test",
     "dev:dashboard": "pnpm --filter @code2spec/dashboard dev",
