@@ -1,0 +1,24 @@
+{
+  "name": "code2spec-workspace",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.5"
+  },
+  "scripts": {
+    "bootstrap": "pnpm install && pnpm build && npm i -g ./packages/engine",
+    "build": "pnpm --filter @code2spec/dashboard build && pnpm --filter @code2spec/engine build",
+    "test": "pnpm --filter @code2spec/engine test",
+    "dev:dashboard": "pnpm --filter @code2spec/dashboard dev",
+    "code2spec": "node packages/engine/dist/cli.js",
+    "typecheck": "pnpm --filter @code2spec/engine typecheck"
+  },
+  "devEngines": {
+    "runtime": {
+      "name": "node",
+      "version": "24.22.2",
+      "onFail": "download"
+    }
+  },
+  "description": "Turn legacy codebases into specs, user journeys, Gherkin scenarios and Playwright tests for AI-driven rebuilds."
+}

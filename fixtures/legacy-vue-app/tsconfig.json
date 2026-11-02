@@ -1,0 +1,4 @@
+{
+  // legacy config
+  "compilerOptions": { "baseUrl": ".", "paths": { "@/*": ["src/*"] }, "strict": false }
+}

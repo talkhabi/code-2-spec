@@ -1,0 +1,11 @@
+{
+  "name": "code2spec",
+  "owner": { "name": "code2spec" },
+  "plugins": [
+    {
+      "name": "code2spec",
+      "source": "./plugin",
+      "description": "Turn legacy code into specs, journeys, Gherkin and Playwright tests for AI rebuilds."
+    }
+  ]
+}

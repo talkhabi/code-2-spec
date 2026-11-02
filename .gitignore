@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.code2spec/
+packages/engine/scratch/
+*.log
+.idea/
+.vscode/
+.DS_Store

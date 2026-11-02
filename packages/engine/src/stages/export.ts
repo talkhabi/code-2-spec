@@ -1,0 +1,143 @@
+import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { spawn } from 'node:child_process';
+import type { Project } from '../project.js';
+import { renderAll, evidenceLine } from '../render/render.js';
+import { getEvidence, listItems, listPhases } from '../specs/store.js';
+import { computeCoverage } from '../graph/coverage.js';
+import { getProfile } from './detect.js';
+import { now } from '../db/db.js';
+
+/**
+ * Build the rebuild pack: everything a fresh AI agent needs to re-implement the product,
+ * with no dependency on the legacy code.
+ */
+export function runExport(project: Project, opts: { includeEvidence?: boolean; outDir?: string } = {}) {
+  project.setStage('export', 'running');
+  const out = opts.outDir ?? project.path('export');
+  rmSync(out, { recursive: true, force: true });
+  mkdirSync(out, { recursive: true });
+  renderAll(project, join(out, 'spec'));
+
+  const phases = listPhases(project).filter((p) => p.status !== 'rejected');
+  const items = listItems(project).filter((i) => i.status !== 'rejected');
+  const profile = getProfile(project);
+  const coverage = computeCoverage(project);
+  const pending = items.filter((i) => i.status === 'pending').length;
+
+  // Playwright suite collected in one place
+  const e2eDir = join(out, 'e2e');
+  mkdirSync(e2eDir, { recursive: true });
+  const featuresDir = join(out, 'features');
+  mkdirSync(featuresDir, { recursive: true });
+  for (const p of phases) {
+    const src = join(out, 'spec', 'phases', p.slug);
+    if (!existsSync(src)) continue;
+    for (const f of items.filter((i) => i.phase_id === p.id && i.type === 'feature')) {
+      const spec = join(src, 'e2e', `${f.slug}.spec.ts`);
+      if (existsSync(spec)) cpSync(spec, join(e2eDir, `${p.slug}--${f.slug}.spec.ts`));
+      const feature = join(src, `${f.slug}.feature`);
+      if (existsSync(feature)) cpSync(feature, join(featuresDir, `${p.slug}--${f.slug}.feature`));
+    }
+  }
+  writeFileSync(join(out, 'playwright.config.ts'), `import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+  testDir: './e2e',
+  use: { baseURL: process.env.BASE_URL ?? 'http://localhost:5173', trace: 'retain-on-failure' },
+  reporter: [['list'], ['json', { outputFile: 'playwright-report.json' }]],
+});
+`);
+
+  // traceability: legacy evidence -> spec item -> tests
+  const trace = ['# Traceability matrix', '', '| Phase | Feature | Journey | Variant | Scenarios | Legacy evidence |', '|---|---|---|---|---|---|'];
+  for (const p of phases) {
+    for (const f of items.filter((i) => i.phase_id === p.id && i.type === 'feature')) {
+      for (const j of items.filter((i) => i.parent_id === f.id && i.type === 'journey')) {
+        const ev = opts.includeEvidence === false ? '' : getEvidence(project, j.id).map(evidenceLine).join('<br>');
+        trace.push(`| ${p.name} | ${f.title} | ${j.title} | ${j.data.variant} | ${(j.data.scenarios ?? []).length} | ${ev} |`);
+      }
+    }
+  }
+  writeFileSync(join(out, 'TRACEABILITY.md'), trace.join('\n'));
+
+  const featureLines = phases.map((p) => {
+    const fs = items.filter((i) => i.phase_id === p.id && i.type === 'feature');
+    return `- **${p.name}** — ${fs.map((f) => f.title).join(', ') || '(no features)'}`;
+  });
+  const agents = `# Rebuild instructions for AI agents
+
+You are rebuilding **${project.config.name}** from its specification. The legacy implementation used: ${profile?.frameworks.join(', ') || 'JS/TS'}.
+You are NOT required to keep that stack — choose the stack requested by the humans driving this rebuild.
+
+## Source of truth
+1. \`spec/README.md\` — index of phases and features.
+2. \`spec/phases/<phase>/<feature>.md\` — journeys (happy / alternate / error / edge), business rules, flows, screens.
+3. \`features/*.feature\` — Gherkin acceptance scenarios. Every scenario must pass in the new system.
+4. \`e2e/*.spec.ts\` + \`playwright.config.ts\` — black-box tests recorded against the legacy app. Run with \`BASE_URL=<your app> npx playwright test\`.
+5. \`spec/system/\` — domain model, glossary, cross-phase journey map and relations.
+
+## How to work
+- Implement phase by phase in this order:
+${phases.map((p, i) => `  ${i + 1}. ${p.name}`).join('\n')}
+- For each feature: read the feature doc, implement, then make its Gherkin scenarios and Playwright tests pass.
+- Preserve behaviour exactly: validation rules, limits, error messages, redirects, permissions.
+- Items marked "Open questions" need a human decision — ask instead of guessing.
+- Technical notes describe cross-cutting behaviour (auth tokens, interceptors, guards) that must be preserved in spirit.
+- Behaviour may be improved only where a human reviewer explicitly says so.
+
+## Scope
+${featureLines.join('\n')}
+`;
+  writeFileSync(join(out, 'AGENTS.md'), agents);
+  writeFileSync(join(out, 'CLAUDE.md'), '@AGENTS.md\n');
+  writeFileSync(join(out, 'README.md'), `# ${project.config.name} — Rebuild pack
+
+Generated by code2spec on ${now()}.
+
+- Phases: ${phases.length}
+- Features: ${items.filter((i) => i.type === 'feature').length}
+- Journeys: ${items.filter((i) => i.type === 'journey').length}
+- Business rules: ${items.filter((i) => i.type === 'rule').length}
+- Code coverage of spec evidence: ${coverage.percent}%
+- Items still pending human review: ${pending}
+
+Start with [AGENTS.md](AGENTS.md).
+`);
+  project.log('info', `Rebuild pack written to ${out}`, 'export');
+  project.setStage('export', 'done', { outDir: out, pending });
+  return out;
+}
+
+/** Run the exported Playwright suite against a running app (legacy or rebuild). */
+export async function runVerify(project: Project, opts: { baseUrl: string }) {
+  project.setStage('verify', 'running');
+  const out = project.path('export');
+  if (!existsSync(join(out, 'playwright.config.ts'))) runExport(project);
+  project.log('info', `Running Playwright suite against ${opts.baseUrl}`, 'verify');
+  const code = await new Promise<number>((resolve) => {
+    const child = spawn('npx', ['--yes', '-p', '@playwright/test', 'playwright', 'test'], {
+      cwd: out, env: { ...process.env, BASE_URL: opts.baseUrl }, stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    const forward = (b: Buffer) => b.toString().split('\n').filter((l) => l.trim()).forEach((l) => project.log('info', l, 'verify'));
+    child.stdout.on('data', forward);
+    child.stderr.on('data', forward);
+    child.on('close', (c) => resolve(c ?? 1));
+    child.on('error', () => resolve(1));
+  });
+  let passed = 0;
+  let failed = 0;
+  let report = '';
+  const reportFile = join(out, 'playwright-report.json');
+  if (existsSync(reportFile)) {
+    report = readFileSync(reportFile, 'utf8');
+    try {
+      const stats = JSON.parse(report).stats ?? {};
+      passed = stats.expected ?? 0;
+      failed = (stats.unexpected ?? 0) + (stats.flaky ?? 0);
+    } catch { /* keep zeros */ }
+  }
+  project.db.prepare('INSERT INTO verifications (ts, base_url, passed, failed, report) VALUES (?, ?, ?, ?, ?)').run(now(), opts.baseUrl, passed, failed, report.slice(0, 2_000_000));
+  project.setStage('verify', code === 0 ? 'done' : 'failed', { passed, failed, baseUrl: opts.baseUrl }, code === 0 ? undefined : `${failed} failing tests`);
+  return { passed, failed, exitCode: code };
+}
