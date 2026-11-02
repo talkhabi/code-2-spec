@@ -72,14 +72,54 @@ then `/exit`.
 echo 'export ANTHROPIC_API_KEY=sk-ant-...' >> ~/.zshrc
 ```
 
-## 3. Install code2spec
+## 3. Choose how to run code2spec
+
+| | **A. Inside Claude Code** (recommended) | **B. Command line + dashboard** |
+|---|---|---|
+| Install | Claude Code plugin | `npm install -g code2spec` |
+| You work | in Claude Code with `/code2spec:…` commands | in a terminal + browser dashboard |
+| Who does the AI work | your Claude Code session | background agents, several phases in parallel |
+| Best for | interactive work, smaller projects, pilots | big projects, long unattended runs |
+
+Both store everything in the project's `.code2spec/` folder and share the dashboard, so you can mix them:
+for example scan and review in Claude Code, run the big analysis from the command line.
+
+### A. Inside Claude Code
+
+In Claude Code, run:
+
+```
+/plugin marketplace add talkhabi/code-2-spec
+```
+
+```
+/plugin install code2spec@code2spec
+```
+
+Restart Claude Code if it asks. Then **open your legacy project** in Claude Code (`cd /path/to/your-project && claude`) and use:
+
+| Command | What it does |
+|---|---|
+| `/code2spec:scan` | scans the project (no AI, free) and estimates the cost of a full run |
+| `/code2spec:run` | runs the pipeline; stops after partition for your phase review; run it again to continue |
+| `/code2spec:review` | walks you through what needs a human decision and records approve/reject |
+| `/code2spec:dashboard` | starts the dashboard and gives you the link |
+
+You can also just ask: *"Document only the src/modules/Auth module with code2spec as a pilot."*
+
+The first command after installing can take ~20 seconds: the plugin downloads code2spec with `npx`. If the tools do not
+show up, run `/mcp` and reconnect `code2spec`.
+
+Steps 4–9 below describe the pipeline with CLI commands; in Claude Code the slash commands do the same, so read them
+for the concepts (phases, review, pilot, export) and skip the commands.
+
+### B. Command line
 
 ```bash
 npm install -g code2spec
 ```
 
-This installs the `code2spec` command (CLI + dashboard) and `code2spec-mcp` (for Claude Code mode).
-To update later, run the same command again.
+This installs the `code2spec` command (CLI + dashboard) and `code2spec-mcp`. To update later, run the same command again.
 
 <details><summary>Alternative: install from source (to change code2spec itself)</summary>
 
@@ -233,21 +273,6 @@ To check the generated tests against a running app (the old one or the rebuild):
 code2spec verify -u http://localhost:5173 -p /path/to/your-project
 ```
 
-## 10. Optional: Claude Code mode
-
-Instead of the CLI running agents, Claude Code itself can be the agent (handy for interactive work). Results go to the same
-database and dashboard.
-
-```bash
-claude plugin marketplace add talkhabi/code-2-spec
-```
-
-```bash
-claude plugin install code2spec@code2spec
-```
-
-Then in Claude Code: *"Use code2spec to turn /path/to/your-project into a spec."* It stops for your phase review.
-
 ---
 
 ## Troubleshooting
@@ -257,6 +282,7 @@ Then in Claude Code: *"Use code2spec to turn /path/to/your-project into a spec."
 | `Claude is not authenticated` / `Not logged in` | Run `claude`, then `/login`, or set `ANTHROPIC_API_KEY`. |
 | `claude native binary not installed` | Reinstall with `npm install -g --allow-scripts=@anthropic-ai/claude-code @anthropic-ai/claude-code`. |
 | `No such built-in module: node:sqlite` | Your Node is older than 22.5. Check `node -v` (the global `code2spec` uses your default Node).  |
+| `/code2spec:…` tools missing in Claude Code | Run `/mcp`, reconnect `code2spec`. Needs Node 22.5+ on your PATH (`node -v`). |
 | `code2spec: command not found` | Open a new terminal; check that npm's global bin is on your `PATH` (`npm prefix -g`). |
 | `ERR_PNPM_IGNORED_BUILDS` (source install) | Run `pnpm approve-builds esbuild`, then `./scripts/install.sh` again. |
 | Dashboard shows "build not found" | Reinstall: `npm install -g code2spec`. |
@@ -267,11 +293,19 @@ Then in Claude Code: *"Use code2spec to turn /path/to/your-project into a spec."
 
 ## Updating
 
+Claude Code plugin: `/plugin marketplace update code2spec`, then restart Claude Code.
+
+Command line:
+
 ```bash
 npm install -g code2spec
 ```
 
 ## Uninstalling
+
+Claude Code plugin: `/plugin uninstall code2spec@code2spec`.
+
+Command line:
 
 ```bash
 npm rm -g code2spec

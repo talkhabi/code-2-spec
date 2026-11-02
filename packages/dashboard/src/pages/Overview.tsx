@@ -51,6 +51,7 @@ export function OverviewPage() {
         <Stat value={p.coverage != null ? `${p.coverage}%` : '–'} label="code coverage" />
         <Stat value={p.items.pendingReview} label="pending review" />
         <Stat value={`$${p.cost.usd.toFixed(2)}`} label={`${Math.round((p.cost.inputTokens + p.cost.outputTokens) / 1000)}k tokens`} />
+        {p.estimate?.linesOfCode > 0 && <Stat value={`~$${p.estimate.usdLow}–${p.estimate.usdHigh}`} label={`full-run estimate · ${p.estimate.linesOfCode.toLocaleString('en-US')} lines`} />}
       </div>
 
       <h2 style={{ marginBottom: 10 }}>Pipeline</h2>

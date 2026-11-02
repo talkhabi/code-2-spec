@@ -8,11 +8,13 @@ description: Reverse-engineer a legacy codebase into an implementation-neutral s
 You drive the code2spec pipeline through its MCP tools (server `code2spec`). You are the analysing agent: the tools give you a
 code graph and validate/store what you submit. Results show up live in the dashboard (`code2spec serve`, http://127.0.0.1:4600).
 
-If the `code2spec` MCP tools are missing, tell the user to install the CLI first: `npm i -g <repo>/packages/engine` (provides `code2spec` and `code2spec-mcp`).
+The plugin starts the code2spec MCP server through `npx` (the first start downloads it and can take ~20 seconds).
+If the `code2spec` tools are missing, ask the user to run `/mcp` and reconnect `code2spec`; Node.js 22.5+ must be installed.
+All tools default to the project open in Claude Code, so a `project`/`path` argument is only needed for other projects.
 
 ## Pipeline
 
-1. **Scan (no AI)** — `init_project` with the absolute project path. Report the detected stack and counts (files, routes, HTTP calls, stores).
+1. **Scan (no AI)** — `init_project` (no path = current project). Report the detected stack, counts (files, lines, routes, HTTP calls, stores) and the full-run estimate.
 2. **Partition** — `next_task` stage=`partition`. Follow the returned instructions exactly; inspect clusters with the graph tools, then `submit_phases` and `complete_task` (always pass `task_id`).
 3. **Human gate** — show the proposed phases (name, description, file count, entry points) and ask the user to approve, rename, merge or split
    (they can also use the dashboard Phases page). Only call `approve_phases` after the user confirms. Never skip this gate unless the user said so.

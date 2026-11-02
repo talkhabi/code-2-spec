@@ -13,7 +13,7 @@ import { startServer } from './server/server.js';
 import { computeCoverage } from './graph/coverage.js';
 
 const program = new Command();
-program.name('code2spec').description('Turn a legacy codebase into specs, user journeys, Gherkin scenarios and Playwright tests for an AI rebuild.').version('0.1.0');
+program.name('code2spec').description('Turn a legacy codebase into specs, user journeys, Gherkin scenarios and Playwright tests for an AI rebuild.').version('0.2.0');
 
 function open(path?: string) {
   const root = findProjectRoot(path ?? process.cwd());
@@ -42,7 +42,9 @@ function printStatus(project: Project) {
   console.log(`Phases: ${s.phases.total} (${s.phases.approved} approved, ${s.phases.analysed} analysed)`);
   console.log(`Features: ${s.items.features} · Journeys: ${s.items.journeys} · Rules: ${s.items.rules} · Entities: ${s.items.entities} · APIs: ${s.items.apis} · Pending review: ${s.items.pendingReview}`);
   if (s.coverage != null) console.log(`Coverage: ${s.coverage}%`);
-  console.log(`AI cost: $${s.cost.usd} (${s.cost.inputTokens} in / ${s.cost.outputTokens} out tokens)\n`);
+  console.log(`AI cost so far: $${s.cost.usd} (${s.cost.inputTokens} in / ${s.cost.outputTokens} out tokens)`);
+  if (s.estimate.linesOfCode) console.log(pc.dim(`Full-run estimate: ~$${s.estimate.usdLow}–${s.estimate.usdHigh} at API prices for ${s.estimate.linesOfCode.toLocaleString('en-US')} lines (Claude Pro/Max: uses plan quota instead)`));
+  console.log('');
 }
 
 const withAi = (cmd: Command) => cmd

@@ -48,17 +48,35 @@ messages, Gherkin scenarios and code evidence.
 
 ## Quick start
 
-**New machine? Follow the full guide: [docs/SETUP.md](docs/SETUP.md)** (Node, pnpm, Claude login, first scan,
-pilot, full run, review, export, troubleshooting).
+There are two ways to use code2spec. Both use the same data and dashboard, so you can switch between them anytime.
+Full step-by-step guide: **[docs/SETUP.md](docs/SETUP.md)**.
 
-Short version (Node 22.5+, logged in with `claude` or `ANTHROPIC_API_KEY` set):
+Prerequisites: Node.js 22.5+ and Claude Code logged in (`claude`, then `/login`). No API key needed.
+
+### A. Inside Claude Code (recommended)
+
+In Claude Code:
+
+```
+/plugin marketplace add talkhabi/code-2-spec
+/plugin install code2spec@code2spec
+```
+
+Open your legacy project in Claude Code and run:
+
+| Command | What it does |
+|---|---|
+| `/code2spec:scan` | scan the project (no AI) and estimate the cost of a full run |
+| `/code2spec:run` | run the pipeline; stops for your phase review, resumes where it left off |
+| `/code2spec:review` | go through low-confidence journeys, conflicts, duplicates, open questions |
+| `/code2spec:dashboard` | open the dashboard |
+
+Claude Code itself is the agent; the work runs under your Claude plan.
+
+### B. Command line + dashboard
 
 ```bash
 npm install -g code2spec
-```
-
-```bash
-code2spec doctor
 ```
 
 ```bash
@@ -68,6 +86,8 @@ code2spec init /path/to/legacy-app
 ```bash
 code2spec serve
 ```
+
+Good for long unattended runs (agents run in the background, several phases in parallel).
 
 ## Use it from the CLI + dashboard
 
@@ -118,7 +138,7 @@ Options: `-m, --model <id>` picks the Claude model; per-project settings live in
 - **Coverage** — by kind and phase, least-covered files, uncovered units, run gap fill
 - **Export** — build the rebuild pack
 
-## Use it inside Claude Code (no API key needed)
+## More on Claude Code mode
 
 Claude Code itself becomes the analysing agent through the MCP server; results land in the same database and dashboard.
 

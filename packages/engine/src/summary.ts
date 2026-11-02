@@ -4,6 +4,16 @@ import { getProfile } from './stages/detect.js';
 import { listTasks } from './ai/runner.js';
 import { json } from './db/db.js';
 
+/**
+ * Rough AI cost of a full run at API prices with the default model, calibrated on real runs
+ * (~$1.2 per 1,000 lines analysed, plus ~25% for partition, gap fill and synthesis). UI-heavy code varies ±30%.
+ */
+export function estimateCost(project: Project) {
+  const loc = (project.db.prepare("SELECT COALESCE(SUM(loc), 0) AS n FROM files WHERE kind NOT IN ('test', 'config')").get() as { n: number }).n;
+  const base = (loc / 1000) * 1.2 * 1.25 + 3;
+  return { linesOfCode: loc, usdLow: Math.round(base * 0.7), usdHigh: Math.round(base * 1.3), note: 'API-price estimate for a full run with the default model; with a Claude Pro/Max login this is usage, not a bill' };
+}
+
 export function projectSummary(project: Project) {
   const stages = STAGES.map((s) => ({ stage: s, ...project.stageStatus(s) }));
   const tasks = listTasks(project);
@@ -31,6 +41,7 @@ export function projectSummary(project: Project) {
       inputTokens: tasks.reduce((a, t) => a + t.input_tokens, 0),
       outputTokens: tasks.reduce((a, t) => a + t.output_tokens, 0),
     },
+    estimate: estimateCost(project),
     tasks: { total: tasks.length, running: tasks.filter((t) => t.status === 'running').length, failed: tasks.filter((t) => t.status === 'failed').length },
   };
 }

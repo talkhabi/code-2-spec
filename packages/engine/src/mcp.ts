@@ -13,6 +13,7 @@ import {
   clearPhaseItems, deleteItemTree, getItem, listItems, listPhases, phaseOfFile, setPhaseAnalysis, setPhaseStatus, setReview, getPhase,
 } from './specs/store.js';
 import { renderAll } from './render/render.js';
+import { startServer } from './server/server.js';
 import { now } from './db/db.js';
 
 /**
@@ -20,7 +21,7 @@ import { now } from './db/db.js';
  * Workflow: init_project → next_task(stage) → explore with graph tools → submit_* (with task_id) → complete_task → next_task …
  */
 const server = new McpServer(
-  { name: 'code2spec', version: '0.1.0' },
+  { name: 'code2spec', version: '0.2.0' },
   {
     instructions: `code2spec reverse-engineers legacy codebases into implementation-neutral specs (features, journeys, rules, Gherkin, Playwright).
 Pipeline: init_project (detect+index, no AI) → next_task stage=partition → human approves phases (approve_phases or dashboard) → next_task stage=analyze (one task per phase) → next_task stage=gapfill → next_task stage=synthesize → export.
@@ -32,8 +33,11 @@ const projects = new Map<string, Project>();
 const contexts = new Map<string, TaskContext>();
 const prompts = new Map<string, TaskPrompt>();
 
+/** The project open in Claude Code (Claude Code sets CLAUDE_PROJECT_DIR for plugin MCP servers). */
+const currentDir = () => process.env.CLAUDE_PROJECT_DIR ?? process.cwd();
+
 function open(ref?: string): Project {
-  const key = ref ?? process.cwd();
+  const key = ref ?? currentDir();
   const cached = projects.get(key);
   if (cached) return cached;
   const entry = listRegistry().find((e) => e.id === key || e.name === key);
@@ -45,7 +49,7 @@ function open(ref?: string): Project {
 }
 
 const text = (v: unknown) => ({ content: [{ type: 'text' as const, text: typeof v === 'string' ? v : JSON.stringify(v, null, 1) }] });
-const projectArg = { project: z.string().optional().describe('Project id, name or path (default: current directory)') };
+const projectArg = { project: z.string().optional().describe('Project id, name or path (default: the project open in Claude Code)') };
 
 server.registerTool('list_projects', { description: 'List projects registered with code2spec and their status.', inputSchema: {} }, async () =>
   text(listRegistry().map((e) => {
@@ -53,10 +57,10 @@ server.registerTool('list_projects', { description: 'List projects registered wi
   })));
 
 server.registerTool('init_project', {
-  description: 'Register a codebase and run the deterministic scan (stack detection + code graph). No AI cost.',
-  inputSchema: { path: z.string(), name: z.string().optional() },
+  description: 'Register a codebase and run the deterministic scan (stack detection + code graph). No AI cost. Re-running it on a scanned project refreshes the graph and keeps all specs.',
+  inputSchema: { path: z.string().optional().describe('Absolute path (default: the project open in Claude Code)'), name: z.string().optional() },
 }, async ({ path, name }) => {
-  const p = Project.init(path, { name });
+  const p = Project.init(path ?? currentDir(), { name });
   projects.set(p.config.id, p);
   projects.set(p.root, p);
   await scan(p);
@@ -203,5 +207,22 @@ server.registerTool('get_coverage', { description: 'Coverage of code units by sp
 
 server.registerTool('export_pack', { description: 'Write the rebuild pack (.code2spec/export) and return its path.', inputSchema: projectArg }, async ({ project }) =>
   text({ outDir: await runStage(open(project), 'export') }));
+
+let dashboard: Promise<string> | undefined;
+server.registerTool('open_dashboard', {
+  description: 'Start the code2spec dashboard (review phases, journeys, relations, coverage) and return its URL. Safe to call repeatedly.',
+  inputSchema: { port: z.number().int().optional() },
+}, async ({ port }) => {
+  const p = port ?? Number(process.env.CODE2SPEC_PORT ?? 4600);
+  dashboard ??= startServer({ port: p }).then((s) => s.url).catch((err) => {
+    dashboard = undefined;
+    // already running (e.g. `code2spec serve` or another Claude Code session) — reuse it
+    if ((err as NodeJS.ErrnoException).code === 'EADDRINUSE') return `http://127.0.0.1:${p}`;
+    throw err;
+  });
+  const url = await dashboard;
+  const id = (() => { try { return open().config.id; } catch { return undefined; } })();
+  return text({ url: id ? `${url}/p/${id}` : url, note: 'Open this link in a browser. It stays up while this Claude Code session runs.' });
+});
 
 await server.connect(new StdioServerTransport());

@@ -1,6 +1,10 @@
 {
   "name": "code2spec",
-  "owner": { "name": "code2spec" },
+  "description": "code2spec: reverse-engineer legacy codebases into specs, user journeys, Gherkin scenarios and Playwright tests for AI rebuilds.",
+  "owner": {
+    "name": "talkhabi",
+    "url": "https://github.com/talkhabi"
+  },
   "plugins": [
     {
       "name": "code2spec",

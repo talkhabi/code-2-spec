@@ -24,6 +24,7 @@ export interface ProjectSummary {
   items: { features: number; journeys: number; rules: number; flows: number; entities: number; apis: number; systemJourneys: number; pendingReview: number };
   coverage: number | null;
   cost: { usd: number; inputTokens: number; outputTokens: number };
+  estimate: { linesOfCode: number; usdLow: number; usdHigh: number };
   tasks: { total: number; running: number; failed: number };
   job: null | string | { stage: string; startedAt: string };
 }

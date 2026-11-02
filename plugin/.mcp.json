@@ -1,8 +1,9 @@
 {
   "mcpServers": {
     "code2spec": {
-      "command": "code2spec-mcp",
-      "args": []
+      "command": "npx",
+      "args": ["-y", "-p", "code2spec@0.2.0", "code2spec-mcp"],
+      "env": { "npm_config_omit": "optional" }
     }
   }
 }
