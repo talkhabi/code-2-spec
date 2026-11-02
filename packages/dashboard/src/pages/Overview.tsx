@@ -9,7 +9,7 @@ const AI_STAGES = new Set(['partition', 'analyze', 'gapfill', 'synthesize']);
 export function OverviewPage() {
   const { id = '' } = useParams();
   const qc = useQueryClient();
-  const { data: p } = useQuery({ queryKey: ['project', id], queryFn: () => api<ProjectSummary & { config: any }>(`/projects/${id}`), refetchInterval: 2000 });
+  const { data: p, error } = useQuery({ queryKey: ['project', id], queryFn: () => api<ProjectSummary & { config: any }>(`/projects/${id}`), refetchInterval: (q) => (q.state.error ? false : 2000) });
   const [baseUrl, setBaseUrl] = useState('http://localhost:5173');
   const [showDebug, setShowDebug] = useState(false);
   const run = useMutation({
@@ -17,6 +17,15 @@ export function OverviewPage() {
     onSettled: () => qc.invalidateQueries({ queryKey: ['project', id] }),
   });
   const cancel = useMutation({ mutationFn: () => api(`/projects/${id}/cancel`, { body: {} }) });
+  if (error && !p) {
+    return (
+      <div className="card empty">
+        <h2>Project not found</h2>
+        <p>{String((error as Error).message)}</p>
+        <Link className="btn" to="/">All projects</Link>
+      </div>
+    );
+  }
   if (!p) return <div className="muted">Loading…</div>;
   const busy = !!p.job;
   const awaiting = p.stages.find((s) => s.status === 'awaiting_review');

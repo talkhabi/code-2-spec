@@ -45,6 +45,12 @@ function saveRegistry(entries: RegistryEntry[]) {
   writeFileSync(registryFile(), JSON.stringify(entries, null, 2));
 }
 
+function register(root: string, config: ProjectConfig) {
+  const entries = listRegistry().filter((e) => e.root !== root && e.id !== config.id);
+  entries.push({ id: config.id, name: config.name, root, addedAt: now() });
+  saveRegistry(entries);
+}
+
 export function workDir(root: string) {
   return join(root, '.code2spec');
 }
@@ -92,9 +98,7 @@ export class Project {
     mkdirSync(dir, { recursive: true });
     writeFileSync(configFile, JSON.stringify(config, null, 2));
     writeFileSync(join(dir, '.gitignore'), 'index.db*\n');
-    const entries = listRegistry().filter((e) => e.root !== root && e.id !== config.id);
-    entries.push({ id: config.id, name: config.name, root, addedAt: now() });
-    saveRegistry(entries);
+    register(root, config);
     return new Project(root, config);
   }
 
@@ -102,12 +106,14 @@ export class Project {
     const root = findProjectRoot(rootPath);
     if (!root) throw new Error(`No code2spec project found at ${rootPath}. Run "code2spec init" first.`);
     const config = JSON.parse(readFileSync(join(workDir(root), 'config.json'), 'utf8')) as ProjectConfig;
+    // a project scanned elsewhere (other data home, CLI vs plugin) must still show up in the dashboard
+    if (!listRegistry().some((e) => e.id === config.id && e.root === root)) register(root, config);
     return new Project(root, config);
   }
 
   static openById(id: string): Project {
     const entry = listRegistry().find((e) => e.id === id || e.name === id);
-    if (!entry) throw new Error(`Unknown project: ${id}`);
+    if (!entry) throw Object.assign(new Error(`Unknown project: ${id}. Scan it once (code2spec init <path> or /code2spec:scan) to register it.`), { statusCode: 404 });
     return Project.open(entry.root);
   }
 

@@ -21,7 +21,7 @@ import { now } from './db/db.js';
  * Workflow: init_project → next_task(stage) → explore with graph tools → submit_* (with task_id) → complete_task → next_task …
  */
 const server = new McpServer(
-  { name: 'code2spec', version: '0.2.0' },
+  { name: 'code2spec', version: '0.2.1' },
   {
     instructions: `code2spec reverse-engineers legacy codebases into implementation-neutral specs (features, journeys, rules, Gherkin, Playwright).
 Pipeline: init_project (detect+index, no AI) → next_task stage=partition → human approves phases (approve_phases or dashboard) → next_task stage=analyze (one task per phase) → next_task stage=gapfill → next_task stage=synthesize → export.

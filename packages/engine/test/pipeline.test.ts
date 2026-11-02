@@ -138,6 +138,22 @@ describe('pipeline (mock AI)', () => {
     expect(await invokeTool(search, { pattern: 'Invalid email', i18nOnly: true }, ctx)).toContain('src/locales/en.json:1');
   });
 
+  it('registers a project scanned under another data home when it is opened', async () => {
+    const before = process.env.CODE2SPEC_HOME;
+    process.env.CODE2SPEC_HOME = join(dir, 'other-home');
+    try {
+      const { listRegistry } = await import('../src/project.js');
+      expect(listRegistry()).toHaveLength(0);
+      const opened = Project.open(join(dir, 'app'));
+      expect(listRegistry().map((e) => e.id)).toEqual([project.config.id]);
+      expect(Project.openById(project.config.id).root).toBe(project.root);
+      opened.close();
+      expect(() => Project.openById('nope')).toThrow(/Unknown project/);
+    } finally {
+      process.env.CODE2SPEC_HOME = before;
+    }
+  });
+
   it('retries and fails a task when the agent never submits', async () => {
     const lazy = new MockRunner({ analyze: async () => {} });
     const phase = listPhases(project)[0];

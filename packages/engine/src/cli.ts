@@ -13,7 +13,7 @@ import { startServer } from './server/server.js';
 import { computeCoverage } from './graph/coverage.js';
 
 const program = new Command();
-program.name('code2spec').description('Turn a legacy codebase into specs, user journeys, Gherkin scenarios and Playwright tests for an AI rebuild.').version('0.2.0');
+program.name('code2spec').description('Turn a legacy codebase into specs, user journeys, Gherkin scenarios and Playwright tests for an AI rebuild.').version('0.2.1');
 
 function open(path?: string) {
   const root = findProjectRoot(path ?? process.cwd());
