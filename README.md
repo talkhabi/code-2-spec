@@ -208,7 +208,17 @@ routes, HTTP calls, stores) and register it in `src/adapters/index.ts`. Everythi
 
 From source: `git clone https://github.com/talkhabi/code-2-spec.git && cd code-2-spec && ./scripts/install.sh` (needs pnpm 10+).
 
-Publishing to npm: `cd packages/engine && npm publish` (builds and tests first).
+### Releasing
+
+The Claude Code plugin starts `code2spec@<version>` from npm, and Claude Code reads the plugin from GitHub.
+So **publish to npm before pushing**, or plugin users get "No matching version found" and Claude Code
+stops retrying the server for 15 minutes.
+
+1. Bump the same version in `packages/engine/package.json`, `plugin/.claude-plugin/plugin.json`, `plugin/.mcp.json`,
+   `src/cli-main.ts` and `src/mcp-main.ts`, and commit.
+2. `cd packages/engine && npm publish` (builds and runs the tests first).
+3. Check `npm view code2spec version`, then `git push`.
+4. Users update with `/plugin marketplace update code2spec` and restart Claude Code.
 
 ```bash
 pnpm test
