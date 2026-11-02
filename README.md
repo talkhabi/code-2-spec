@@ -51,14 +51,10 @@ messages, Gherkin scenarios and code evidence.
 **New machine? Follow the full guide: [docs/SETUP.md](docs/SETUP.md)** (Node, pnpm, Claude login, first scan,
 pilot, full run, review, export, troubleshooting).
 
-Short version (Node 22.5+, pnpm 10+, logged in with `claude` or `ANTHROPIC_API_KEY` set):
+Short version (Node 22.5+, logged in with `claude` or `ANTHROPIC_API_KEY` set):
 
 ```bash
-git clone <REPO_URL> code2spec && cd code2spec
-```
-
-```bash
-./scripts/install.sh
+npm install -g code2spec
 ```
 
 ```bash
@@ -127,7 +123,7 @@ Options: `-m, --model <id>` picks the Claude model; per-project settings live in
 Claude Code itself becomes the analysing agent through the MCP server; results land in the same database and dashboard.
 
 ```bash
-claude plugin marketplace add /path/to/code2spec
+claude plugin marketplace add talkhabi/code-2-spec
 ```
 
 ```bash
@@ -189,6 +185,10 @@ fixtures/             small legacy Vue + Express shop used in tests
 routes, HTTP calls, stores) and register it in `src/adapters/index.ts`. Everything downstream is language-agnostic.
 
 ## Development
+
+From source: `git clone https://github.com/talkhabi/code-2-spec.git && cd code-2-spec && ./scripts/install.sh` (needs pnpm 10+).
+
+Publishing to npm: `cd packages/engine && npm publish` (builds and tests first).
 
 ```bash
 pnpm test

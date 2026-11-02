@@ -7,3 +7,4 @@ packages/engine/scratch/
 .vscode/
 .DS_Store
 .pack/
+packages/engine/README.md

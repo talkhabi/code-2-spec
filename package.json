@@ -6,11 +6,11 @@
     "node": ">=22.5"
   },
   "scripts": {
-    "build": "pnpm --filter @code2spec/dashboard build && pnpm --filter @code2spec/engine build",
-    "test": "pnpm --filter @code2spec/engine test",
+    "build": "pnpm --filter @code2spec/dashboard build && pnpm --filter code2spec build",
+    "test": "pnpm --filter code2spec test",
     "dev:dashboard": "pnpm --filter @code2spec/dashboard dev",
     "code2spec": "node packages/engine/dist/cli.js",
-    "typecheck": "pnpm --filter @code2spec/engine typecheck"
+    "typecheck": "pnpm --filter code2spec typecheck"
   },
   "devEngines": {
     "runtime": {

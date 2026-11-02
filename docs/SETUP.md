@@ -14,8 +14,6 @@ You need:
 | Requirement | Why |
 |---|---|
 | **Node.js 24 LTS** (22.5+ minimum) | code2spec uses the built-in `node:sqlite` module |
-| **pnpm 10+** | workspace install and build |
-| **git** | to clone the repo |
 | **A Claude account (Pro / Max)** *or* **an Anthropic API key** | the AI stages run on Claude |
 
 **Your code leaves your machine.** AI stages send the project's source code to Anthropic (the same as using Claude Code
@@ -24,7 +22,7 @@ on it). Check that your company allows this before scanning work code. Secret fi
 
 **Cost.** With a Claude Pro/Max login you pay nothing extra: runs use your plan's usage limits, and the dollar amount
 code2spec shows is only an estimate at API prices. With an API key, that amount is billed to your Anthropic Console account.
-Rough guide: about **$1.2 per 1,000 lines of code** analysed with the default model (Opus). See [step 6](#6-run-a-pilot-on-one-module-recommended).
+Rough guide: about **$1.2 per 1,000 lines of code** analysed with the default model (Opus). See [step 6](#5-run-a-pilot-on-one-module-recommended).
 
 ---
 
@@ -48,17 +46,7 @@ nvm install 24 && nvm alias default 24
 
 (Homebrew `brew install node@24` or Volta `volta install node@24` work too.)
 
-## 2. Install pnpm
-
-```bash
-npm install -g pnpm
-```
-
-```bash
-pnpm -v
-```
-
-## 3. Install Claude Code and log in
+## 2. Install Claude Code and log in
 
 code2spec's AI stages use the Claude Agent SDK, which reuses the Claude Code login.
 
@@ -84,26 +72,31 @@ then `/exit`.
 echo 'export ANTHROPIC_API_KEY=sk-ant-...' >> ~/.zshrc
 ```
 
-## 4. Get code2spec and build it
+## 3. Install code2spec
 
 ```bash
-git clone <REPO_URL> code2spec
+npm install -g code2spec
 ```
 
+This installs the `code2spec` command (CLI + dashboard) and `code2spec-mcp` (for Claude Code mode).
+To update later, run the same command again.
+
+<details><summary>Alternative: install from source (to change code2spec itself)</summary>
+
+Needs pnpm 10+ and git.
+
 ```bash
-cd code2spec
+git clone https://github.com/talkhabi/code-2-spec.git && cd code-2-spec
 ```
 
 ```bash
 ./scripts/install.sh
 ```
 
-`./scripts/install.sh` checks Node and pnpm, runs `pnpm install`, builds the dashboard and engine, packs the engine and
-installs the `code2spec` and `code2spec-mcp` commands globally with your own npm (works with nvm, Volta, Homebrew).
-The install is a copy: after `git pull`, run the script again to update.
+The script installs dependencies, builds, and installs the commands globally with your own npm (works with nvm, Volta,
+Homebrew). After `git pull`, run it again. Don't use `npm i -g ./packages/engine`: with Volta it creates a broken link.
 
-> Do not use `npm i -g ./packages/engine` directly: with Volta it creates a broken link, and run inside a pnpm script
-> it installs into pnpm's private Node instead of yours.
+</details>
 
 Check the machine:
 
@@ -113,7 +106,7 @@ code2spec doctor
 
 All lines should be ✔ (a ! for `ANTHROPIC_API_KEY` is fine when you logged in with Claude).
 
-## 5. Scan your project (free, no AI)
+## 4. Scan your project (free, no AI)
 
 ```bash
 code2spec init /absolute/path/to/your-project
@@ -135,7 +128,7 @@ Things to know:
   `code2spec init /path -x "src/generated/**" "legacy-admin/**"`, or edit `exclude` in `.code2spec/config.json` and run `code2spec scan -p /path`.
 - Useful checks: `code2spec status -p /path` and `code2spec coverage -p /path`.
 
-## 6. Run a pilot on one module (recommended)
+## 5. Run a pilot on one module (recommended)
 
 Before spending a lot of usage on a big project, document one module and look at the quality and cost.
 
@@ -156,7 +149,7 @@ Pick a cheaper model for big projects:
 code2spec analyze --phase authentication -m sonnet -p /path/to/your-project
 ```
 
-## 7. Open the dashboard
+## 6. Open the dashboard
 
 ```bash
 code2spec serve
@@ -165,7 +158,7 @@ code2spec serve
 Open http://127.0.0.1:4600. Keep this terminal open; use a second terminal for CLI commands (both work on the same data).
 Use `--port 4700` if 4600 is taken.
 
-## 8. Run the full pipeline
+## 7. Run the full pipeline
 
 From the dashboard press **Run pipeline**, or:
 
@@ -200,7 +193,7 @@ Notes:
 - `-m sonnet` / `-m opus` picks the model; set `"model"` in `.code2spec/config.json` to make it permanent.
 - `"concurrency"` in `.code2spec/config.json` is the number of phases analysed in parallel (default 3).
 
-## 9. Review the results
+## 8. Review the results
 
 Dashboard pages:
 
@@ -214,7 +207,7 @@ Dashboard pages:
 
 Edited items are marked *edited* and are never overwritten by a re-run.
 
-## 10. Export the rebuild pack
+## 9. Export the rebuild pack
 
 ```bash
 code2spec export -p /path/to/your-project
@@ -240,13 +233,13 @@ To check the generated tests against a running app (the old one or the rebuild):
 code2spec verify -u http://localhost:5173 -p /path/to/your-project
 ```
 
-## 11. Optional: Claude Code mode
+## 10. Optional: Claude Code mode
 
 Instead of the CLI running agents, Claude Code itself can be the agent (handy for interactive work). Results go to the same
 database and dashboard.
 
 ```bash
-claude plugin marketplace add /path/to/code2spec
+claude plugin marketplace add talkhabi/code-2-spec
 ```
 
 ```bash
@@ -263,10 +256,10 @@ Then in Claude Code: *"Use code2spec to turn /path/to/your-project into a spec."
 |---|---|
 | `Claude is not authenticated` / `Not logged in` | Run `claude`, then `/login`, or set `ANTHROPIC_API_KEY`. |
 | `claude native binary not installed` | Reinstall with `npm install -g --allow-scripts=@anthropic-ai/claude-code @anthropic-ai/claude-code`. |
-| `No such built-in module: node:sqlite` | Your Node is older than 22.5. Check `node -v` (the global `code2spec` uses your default Node). In the repo, pnpm downloads Node 24 for scripts automatically. |
-| `code2spec: command not found` | Run `./scripts/install.sh` again and open a new terminal; make sure npm's global bin is on your `PATH` (`npm prefix -g`). |
-| `ERR_PNPM_IGNORED_BUILDS` (esbuild) | Run `pnpm approve-builds esbuild`, then the install script again. |
-| Dashboard shows "build not found" | Run `pnpm build` in the repo. |
+| `No such built-in module: node:sqlite` | Your Node is older than 22.5. Check `node -v` (the global `code2spec` uses your default Node).  |
+| `code2spec: command not found` | Open a new terminal; check that npm's global bin is on your `PATH` (`npm prefix -g`). |
+| `ERR_PNPM_IGNORED_BUILDS` (source install) | Run `pnpm approve-builds esbuild`, then `./scripts/install.sh` again. |
+| Dashboard shows "build not found" | Reinstall: `npm install -g code2spec`. |
 | Port 4600 in use | `code2spec serve --port 4700`. |
 | Usage limit reached mid-run | Wait for the reset, then re-run the same command. It resumes. |
 | A phase failed | Check the dashboard Overview log, then `code2spec analyze --phase <slug> -p …`. |
@@ -275,13 +268,13 @@ Then in Claude Code: *"Use code2spec to turn /path/to/your-project into a spec."
 ## Updating
 
 ```bash
-cd code2spec && git pull && ./scripts/install.sh
+npm install -g code2spec
 ```
 
 ## Uninstalling
 
 ```bash
-npm rm -g @code2spec/engine
+npm rm -g code2spec
 ```
 
 Delete `~/.code2spec` (project registry) and the `.code2spec/` folders inside scanned projects.

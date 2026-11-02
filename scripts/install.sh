@@ -23,7 +23,7 @@ echo "▸ Installing the code2spec command"
 mkdir -p .pack
 version=$(node -p "require('./packages/engine/package.json').version")
 (cd packages/engine && npm pack --silent --pack-destination ../../.pack >/dev/null)
-npm install -g "./.pack/code2spec-engine-${version}.tgz"
+npm install -g "./.pack/code2spec-${version}.tgz"
 hash -r 2>/dev/null || true
 
 if command -v code2spec >/dev/null 2>&1; then
